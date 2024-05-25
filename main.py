@@ -1,11 +1,6 @@
-from typing import Union
-
 from fastapi import FastAPI
+from routes.node_routes import router as node_router
 
 app = FastAPI()
 
-
-@app.get("/")
-def read_root():
-    print("Hello World")
-    return {"Hello": "World"}
+app.include_router(node_router)
