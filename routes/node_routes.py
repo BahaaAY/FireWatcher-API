@@ -22,3 +22,17 @@ async def register_node( node_data: Node):
     })
 
     return {"node_id": str(node_id), "secret_key": secret_key}
+
+@router.get("/nodes/")
+async def get_nodes():
+    nodes = nodes_collection.find({},{ "secret_key" : 0})  # Exclude secret_key from response
+    nodes_list = []
+    for node in nodes:
+        node["_id"] = str(node["_id"]) # Convert ObjectId to string
+        nodes_list.append(node)
+    return {"nodes": nodes_list}
+
+@router.get("/testn")
+async def testn():
+    print("Test Node req")
+    return {"test": "testn"}
