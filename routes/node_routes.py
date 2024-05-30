@@ -6,13 +6,17 @@ from passlib.hash import bcrypt
 
 router = APIRouter()
 
-@router.post("/register-node/")
+@router.post("/nodes/")
 async def register_node( node_data: Node):
     # if not authenticate_token(access_token):
     #     raise HTTPException(status_code=401, detail="Invalid access token")
 
-    secret_key = secrets.token_urlsafe(16)
-    hashed_secret_key = bcrypt.hash(secret_key)
+    # secret_key = secrets.token_urlsafe(32)
+        # Generate 32 bytes of random data
+    token_bytes = secrets.token_bytes(32)
+    # Convert the bytes to a hexadecimal string
+    hex_token = token_bytes.hex()
+    hashed_secret_key = bcrypt.hash(hex_token)
 
     node_id = insert_node({
         "latitude": node_data.latitude,
@@ -21,7 +25,7 @@ async def register_node( node_data: Node):
         "secret_key": hashed_secret_key
     })
 
-    return {"node_id": str(node_id), "secret_key": secret_key}
+    return {"node_id": str(node_id), "secret_key": hex_token}
 
 @router.get("/nodes/")
 async def get_nodes():
