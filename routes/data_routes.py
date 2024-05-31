@@ -1,6 +1,6 @@
 import datetime
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import pymongo
 from models.node import Node
 from database import nodes_collection, insert_node,data_collection
@@ -21,7 +21,7 @@ model_path = '../ml_model/voting_classifier.joblib'
 router = APIRouter()
 
 class Data(BaseModel):
-    node_id: str
+    node_id: str = Field(pattern=r"^[0-9a-f]{24}$")
     secret_key: str
     humidity:float
     temperature:float
