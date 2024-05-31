@@ -1,10 +1,9 @@
-from pymongo import MongoClient
+import motor.motor_asyncio
 
-client = MongoClient("mongodb://localhost:27017/")
-db = client['FireWatcher']
-nodes_collection = db['nodes']
-data_collection = db['data']
-def insert_node(node_data):
-    return nodes_collection.insert_one(node_data).inserted_id
+client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017/")
+db = client.FireWatcher
+nodes_collection = db.get_collection('nodes')
+data_collection = db.get_collection('data')
+
 
 

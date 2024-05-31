@@ -1,7 +1,7 @@
+import secrets
 from fastapi import APIRouter, HTTPException
 from models.node import Node
-from database import nodes_collection, insert_node
-import secrets
+from database import nodes_collection
 from passlib.hash import bcrypt
 
 router = APIRouter()
@@ -18,18 +18,18 @@ async def register_node( node_data: Node):
     hex_token = token_bytes.hex()
     hashed_secret_key = bcrypt.hash(hex_token)
 
-    node_id = insert_node({
+    node_id = await nodes_collection.insert_one({
         "latitude": node_data.latitude,
         "longitude": node_data.longitude,
         "node_type": node_data.node_type.value,
         "secret_key": hashed_secret_key
     })
 
-    return {"node_id": str(node_id), "secret_key": hex_token}
+    return {"node_id": str(node_id.inserted_id), "secret_key": hex_token}
 
 @router.get("/nodes/")
 async def get_nodes():
-    nodes = nodes_collection.find({},{ "secret_key" : 0})  # Exclude secret_key from response
+    nodes = await nodes_collection.find({},{ "secret_key" : 0})  # Exclude secret_key from response
     nodes_list = []
     for node in nodes:
         node["_id"] = str(node["_id"]) # Convert ObjectId to string

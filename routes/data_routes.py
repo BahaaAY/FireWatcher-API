@@ -3,7 +3,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 import pymongo
 from models.node import Node
-from database import nodes_collection, insert_node,data_collection
+from models.data import Data
+from schemas.data import DataSchema, insert_data
+from database import nodes_collection, data_collection
 import secrets
 from passlib.hash import bcrypt
 from utils.fwi_calc import FWIClass 
@@ -13,25 +15,25 @@ from bson.objectid import ObjectId
 from joblib import load
 import numpy as np
 import pandas as pd
+import os
+
 
 
 # Load environment variables from .env file
 load_dotenv()
-model_path = '../ml_model/voting_classifier.joblib'
+
+# Get the current  directory
+curr_dir = os.path.dirname(os.path.abspath(__file__))
+# Construct the absolute path to the model
+model_path = os.path.join(curr_dir, '..', 'ml_model', 'voting_classifier.joblib')
+
 router = APIRouter()
 
-class Data(BaseModel):
-    node_id: str = Field(pattern=r"^[0-9a-f]{24}$")
-    secret_key: str
-    humidity:float
-    temperature:float
-    smoke_value:float
-    
+
 
 @router.post('/data/')
 async def save_readings(node_data: Data):
-    print("hello ")
-    node = nodes_collection.find_one({"_id": ObjectId(node_data.node_id)})
+    node = await nodes_collection.find_one({"_id": ObjectId(node_data.node_id)})
 
     if node is None:
         raise HTTPException(status_code=404, detail="Node not found")
@@ -39,24 +41,29 @@ async def save_readings(node_data: Data):
     # Check if the provided secret key matches the hashed secret key in the database
     if not bcrypt.verify(node_data.secret_key.encode('utf-8'), node['secret_key'].encode('utf-8')):
         raise HTTPException(status_code=401, detail="Invalid secret key")
+    
 
-    last_node_reading = data_collection.find_one(
-    {"_id": ObjectId(node_data.node_id)},
-    sort=[("timestamp", pymongo.DESCENDING)]  # Replace 'timestamp' with your actual timestamp field
-)
+    search_id = ObjectId(node_data.node_id)
+    last_node_reading = await data_collection.find_one({"node_id": search_id}, sort=[("timestamp", -1)])
+    print("last node reading: ", last_node_reading)
     ffmc0 = 85.0
     dmc0 = 6.0
     dc0 = 15.0
     current_date = datetime.datetime.now()
 
-    if last_node_reading:
+    if last_node_reading != None:
         # get the last FFMC readings
-        x=1
+        print("found reading with timestamp: ", last_node_reading["timestamp"])
+        ffmc0 = last_node_reading["ffmc"]
+        dmc0 = last_node_reading["dmc"]
+        dc0 = last_node_reading["dc"]
+
     print("node ",node)
     weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
     print(weather_data)
     mth = int(current_date.month)
     fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],weather_data["current"]["precip_mm"])
+    # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],12)
     ffmc = fwisystem.FFMCcalc(ffmc0)
     dmc = fwisystem.DMCcalc(dmc0,mth)
     dc = fwisystem.DCcalc(dc0,mth)
@@ -66,6 +73,7 @@ async def save_readings(node_data: Data):
     ffmc0 = ffmc
     dmc0 = dmc
     dc0 = dc
+    
 
 
     voting_clf = load(model_path)
@@ -83,21 +91,43 @@ async def save_readings(node_data: Data):
     'BUI': [bui],
     'FWI': [fwi]
 }
-    
-    print("data 123123",data)
     df = pd.DataFrame(data)
 
     # Make a prediction
     predicted_output = voting_clf.predict(df).tolist()
-    print("Predicted Output:", predicted_output)
+    #convert to boolean
+    predicted_output = [bool(x) for x in predicted_output]
+
+    # Insert the data into the database
+
+    data = DataSchema(
+        node_id=node_data.node_id,
+        humidity=node_data.humidity,
+        temperature=node_data.temperature,
+        smoke_value=node_data.smoke_value,
+        wind_kph=weather_data["current"]["wind_kph"],
+        rain_mm=weather_data["current"]["precip_mm"],
+        ffmc=ffmc,
+        dmc=dmc,
+        dc=dc,
+        isi=isi,
+        bui=bui,
+        fwi=fwi,
+        fire_risk=predicted_output[0],
+        fire=True if node_data.smoke_value >= 1100 else False
+    )
+
+    await insert_data(data)
+
     return (
-        {"ffmc":ffmc,
-         "dmc":dmc,
-         "dc":dc,
-         "isi":isi,
-         "bui":bui,
-         "fwi":fwi,
-         "predicted_output":predicted_output    
+        {"FFMC":ffmc,
+         "DMC":dmc,
+         "DC":dc,
+         "ISI":isi,
+         "BUI":bui,
+         "FWI":fwi,
+         "Fire Risk":predicted_output[0],
+         "Fire": True if node_data.smoke_value >= 1100 else False
          }
         )
     
