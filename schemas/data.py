@@ -1,6 +1,6 @@
 import datetime
 
-from pydantic import BaseModel, Field, validator, root_validator
+from pydantic import BaseModel, root_validator
 
 from bson import ObjectId as BsonObjectId
 from typing import Any
@@ -37,6 +37,7 @@ class DataSchema(BaseModel):
     fwi:float
     fire_risk:bool
     fire: bool
+    updated_FWI:bool = False
     timestamp: datetime.datetime = None
     @root_validator(pre=True)  # Use a root validator to set the timestamp
     def set_timestamp(cls, values):
