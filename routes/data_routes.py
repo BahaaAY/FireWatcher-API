@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 import pymongo
@@ -44,38 +44,83 @@ async def save_readings(node_data: Data):
     
 
     search_id = ObjectId(node_data.node_id)
-    last_node_reading = await data_collection.find_one({"node_id": search_id}, sort=[("timestamp", -1)])
+    last_node_reading = await data_collection.find_one({"node_id": search_id,"updated_FWI":True}, sort=[("timestamp", -1)])
     print("last node reading: ", last_node_reading)
-    ffmc0 = 85.0
-    dmc0 = 6.0
-    dc0 = 15.0
-    current_date = datetime.datetime.now()
-
-    if last_node_reading != None:
-        # get the last FFMC readings
-        print("found reading with timestamp: ", last_node_reading["timestamp"])
-        ffmc0 = last_node_reading["ffmc"]
-        dmc0 = last_node_reading["dmc"]
-        dc0 = last_node_reading["dc"]
-
-    print("node ",node)
-    weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
-    print(weather_data)
-    mth = int(current_date.month)
-    fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],weather_data["current"]["precip_mm"])
-    # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],12)
-    ffmc = fwisystem.FFMCcalc(ffmc0)
-    dmc = fwisystem.DMCcalc(dmc0,mth)
-    dc = fwisystem.DCcalc(dc0,mth)
-    isi = fwisystem.ISIcalc(ffmc)
-    bui = fwisystem.BUIcalc(dmc,dc)
-    fwi = fwisystem.FWIcalc(isi,bui)
-    ffmc0 = ffmc
-    dmc0 = dmc
-    dc0 = dc
     
+    current_date = datetime.datetime.now()
+    noon_time = current_date.replace(hour=12, minute=0, second=0, microsecond=0)
+    start_window = noon_time - timedelta(minutes=30)
+    end_window = noon_time + timedelta(minutes=30)
 
-
+    if last_node_reading is not None:
+        last_reading_time = last_node_reading["timestamp"]  # Ensure this is a datetime object
+        time_difference = current_date - last_reading_time
+    
+    # Check if 24 hours have passed since the last update and if current time is around 12 noon
+        if time_difference > timedelta(days=1) and (start_window <= current_date <= end_window):
+        # Conditions met, proceed with updating
+        # Your logic to calculate and update FFMC, DMC, DC, etc.
+            weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
+            print(weather_data)
+            mth = int(current_date.month)
+            fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],weather_data["current"]["precip_mm"])
+            # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],12)
+            ffmc = fwisystem.FFMCcalc(ffmc0)
+            dmc = fwisystem.DMCcalc(dmc0,mth)
+            dc = fwisystem.DCcalc(dc0,mth)
+            isi = fwisystem.ISIcalc(ffmc)
+            bui = fwisystem.BUIcalc(dmc,dc)
+            fwi = fwisystem.FWIcalc(isi,bui)
+            ffmc0 = ffmc
+            dmc0 = dmc
+            dc0 = dc
+    
+        else:
+        # Conditions not met, do not update FFMC, DMC, DC
+        # You can continue to use the last stored values
+            print("found reading with timestamp: ", last_node_reading["timestamp"])
+            ffmc0 = last_node_reading["ffmc"]
+            dmc0 = last_node_reading["dmc"]
+            dc0 = last_node_reading["dc"]
+    else:
+        # No previous reading, check if it's around 12 noon to proceed
+        if start_window <= current_date <= end_window:
+        # Your logic to calculate and update FFMC, DMC, DC, etc. for the first time
+            weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
+            print(weather_data)
+            mth = int(current_date.month)
+            fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],weather_data["current"]["precip_mm"])
+            # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],12)
+            ffmc = fwisystem.FFMCcalc(ffmc0)
+            dmc = fwisystem.DMCcalc(dmc0,mth)
+            dc = fwisystem.DCcalc(dc0,mth)
+            isi = fwisystem.ISIcalc(ffmc)
+            bui = fwisystem.BUIcalc(dmc,dc)
+            fwi = fwisystem.FWIcalc(isi,bui)
+            ffmc0 = ffmc
+            dmc0 = dmc
+            dc0 = dc
+        else:
+        # Not around noon, you may choose to wait or handle this case differently
+        # get the last FFMC readings
+            ffmc0 = 85.0
+            dmc0 = 6.0
+            dc0 = 15.0
+            weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
+            print(weather_data)
+            mth = int(current_date.month)
+            fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],weather_data["current"]["precip_mm"])
+            # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],12)
+            ffmc = fwisystem.FFMCcalc(ffmc0)
+            dmc = fwisystem.DMCcalc(dmc0,mth)
+            dc = fwisystem.DCcalc(dc0,mth)
+            isi = fwisystem.ISIcalc(ffmc)
+            bui = fwisystem.BUIcalc(dmc,dc)
+            fwi = fwisystem.FWIcalc(isi,bui)
+            ffmc0 = ffmc
+            dmc0 = dmc
+            dc0 = dc
+   
     voting_clf = load(model_path)
 
     data = {
