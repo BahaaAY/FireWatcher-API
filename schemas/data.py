@@ -51,4 +51,8 @@ async def insert_data(data: DataSchema):
     data_id = await data_collection.insert_one(data_dict)
     return {"id": str(data_id.inserted_id), "timestamp": data_dict['timestamp']}
 
+async def get_last_reading(node_id: str):
+    data = await data_collection.find_one({"node_id": node_id}, sort=[("timestamp", -1)])
+    return data
+
     

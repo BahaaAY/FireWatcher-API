@@ -2,6 +2,7 @@ import secrets
 from fastapi import APIRouter
 from models.node import Node
 from database import nodes_collection
+from schemas.data import get_last_reading
 from passlib.hash import bcrypt
 
 router = APIRouter()
@@ -29,10 +30,12 @@ async def register_node( node_data: Node):
 
 @router.get("/nodes/")
 async def get_nodes():
-    nodes = await nodes_collection.find({},{ "secret_key" : 0})  # Exclude secret_key from response
+    nodes = await nodes_collection.find({},{ "secret_key" : 0}).to_list(None)  # Exclude secret_key from response
     nodes_list = []
     for node in nodes:
         node["_id"] = str(node["_id"]) # Convert ObjectId to string
+        # get last reading from data collection for this node
+        node["last_reading"] = await get_last_reading(node["_id"])
         nodes_list.append(node)
     return {"nodes": nodes_list}
 
