@@ -1,5 +1,5 @@
 import secrets
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from models.node import Node
 from database import nodes_collection
 from passlib.hash import bcrypt

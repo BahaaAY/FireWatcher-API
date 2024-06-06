@@ -48,15 +48,21 @@ async def save_readings(node_data: Data):
     print("last node reading: ", last_node_reading)
     
     
-    current_date = datetime.datetime.now()
+    date_string = "2024-06-04 12:10:54.512963"
+
+    # Parse the string into a datetime object using the corresponding format
+    # current_date = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S.%f')
+    current_date = datetime.now()
+    print("current_date 123 ",current_date)
     noon_time = current_date.replace(hour=12, minute=0, second=0, microsecond=0)
     start_window = noon_time - timedelta(minutes=30)
     end_window = noon_time + timedelta(minutes=30)
     updated_fwi = False
+    weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
     if last_node_reading is not None:
         last_reading_time = last_node_reading["timestamp"]  # Ensure this is a datetime object
         time_difference = current_date - last_reading_time
-    
+        print("time difference : ",time_difference, " ",current_date, " ",last_reading_time)
     # Check if 24 hours have passed since the last update and if current time is around 12 noon
         if time_difference > timedelta(days=1) and (start_window <= current_date <= end_window):
         # Conditions met, proceed with updating
@@ -65,8 +71,8 @@ async def save_readings(node_data: Data):
             ffmc0 = last_node_reading["ffmc"]
             dmc0 = last_node_reading["dmc"]
             dc0 = last_node_reading["dc"]
-            weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
-            print(weather_data)
+            # weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
+            print("weather data testing : 1",weather_data)
             mth = int(current_date.month)
             fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],weather_data["current"]["precip_mm"])
             # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],12)
@@ -98,8 +104,8 @@ async def save_readings(node_data: Data):
             ffmc0 = 85.0
             dmc0 = 6.0
             dc0 = 15.0
-            weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
-            print(weather_data)
+            # weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
+            print("weather data testing : 2",weather_data)
             mth = int(current_date.month)
             fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],weather_data["current"]["precip_mm"])
             # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],12)
@@ -117,8 +123,8 @@ async def save_readings(node_data: Data):
             ffmc0 = 85.0
             dmc0 = 6.0
             dc0 = 15.0
-            weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
-            print(weather_data)
+            # weather_data = await fetch_weather_data(node["latitude"], node["longitude"])
+            print("weather data testing : 3",weather_data)
             mth = int(current_date.month)
             fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],weather_data["current"]["precip_mm"])
             # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],12)
@@ -131,7 +137,7 @@ async def save_readings(node_data: Data):
             updated_fwi = False
    
     voting_clf = load(model_path)
-
+    
     data = {
     'month': [current_date.month],
     'Temperature':[node_data.temperature],
@@ -184,6 +190,7 @@ async def save_readings(node_data: Data):
          "FWI":fwi,
          "Fire Risk":predicted_output[0],
          "Fire": True if node_data.smoke_value >= 1100 else False
+
          }
         )
     
