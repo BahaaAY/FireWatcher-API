@@ -21,6 +21,7 @@ async def register_node( node_data: Node):
     hashed_secret_key = bcrypt.hash(hex_token)
 
     node_id = await nodes_collection.insert_one({
+        "node_name": node_data.node_name,
         "latitude": node_data.latitude,
         "longitude": node_data.longitude,
         "node_type": node_data.node_type.value,

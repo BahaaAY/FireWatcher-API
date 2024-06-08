@@ -11,5 +11,6 @@ class Node(BaseModel):
     latitude: float
     longitude: float
     node_type: NodeType  # 'wifi' or 'lora'
+    node_name: str
 
 
