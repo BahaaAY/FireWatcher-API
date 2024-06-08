@@ -3,7 +3,7 @@ import datetime
 from pydantic import BaseModel, root_validator
 
 from bson import ObjectId as BsonObjectId
-from typing import Any
+from typing import Any, List
 
 from database import data_collection
 
@@ -55,4 +55,17 @@ async def get_last_reading(node_id: str):
     data = await data_collection.find_one({"node_id": node_id}, sort=[("timestamp", -1)])
     return data
 
-    
+
+async def get_last_10_readings(node_id: str) -> List[Any]:
+    print("123123  1 ",node_id)
+    try:
+        # Convert node_id to ObjectId
+        node_id_obj = ObjectId(node_id)
+    except Exception as e:
+        print(f"Failed to convert node_id to ObjectId: {e}")
+        return []
+    print("123123  2 ",type(node_id_obj),node_id_obj)
+    print(f"Querying data_collection with node_id: {node_id_obj}")
+    nodes = await data_collection.find({},{}).to_list(None)
+    print("123123 3 ",nodes)
+    return nodes
