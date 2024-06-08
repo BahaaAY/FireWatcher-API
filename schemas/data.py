@@ -66,7 +66,6 @@ async def get_last_reading(node_id: BsonObjectId):
         return None
     
 async def get_last_10_readings(node_id: str) -> List[Any]:
-    print("123123  1 ",node_id)
     try:
         # Convert node_id to ObjectId
         if not isinstance(node_id, BsonObjectId):
@@ -74,6 +73,6 @@ async def get_last_10_readings(node_id: str) -> List[Any]:
     except Exception as e:
         print(f"Failed to convert node_id to ObjectId: {e}")
         return []
-    nodes = await data_collection.find({"node_id": node_id},{"node_id":0,"_id":0}).to_list(None)
-    return  nodes
+    readings = await data_collection.find({"node_id": node_id},{"node_id":0,"_id":0}).to_list(None)
+    return  readings
     

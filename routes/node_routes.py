@@ -50,7 +50,6 @@ async def get_node_by_id(id: str):
     if node is None:
         raise HTTPException(status_code=404, detail="Node not found")
     node["_id"] = str(node["_id"])
-    print("nodeeeeeeeee ",node,node["_id"])
     node["last_readings"] = await get_last_10_readings(node["_id"])
     return node
 
