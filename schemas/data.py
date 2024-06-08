@@ -37,6 +37,7 @@ class DataSchema(BaseModel):
     fwi:float
     fire_risk:bool
     fire: bool
+    fire_risk_level: int
     updated_FWI:bool = False
     timestamp: datetime.datetime = None
     @root_validator(pre=True)  # Use a root validator to set the timestamp

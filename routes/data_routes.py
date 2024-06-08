@@ -158,6 +158,23 @@ async def save_readings(node_data: Data):
     #convert to boolean
     predicted_output = [bool(x) for x in predicted_output]
 
+
+    if(fwi <5 and predicted_output[0] == False ):
+        fire_risk_level = 0
+    elif(fwi <5 and predicted_output[0] == True ):
+        fire_risk_level = 1
+    elif(fwi >=5 and fwi <10 and predicted_output[0] == True ):
+        fire_risk_level = 2
+    elif(fwi >=10 and fwi <20 and predicted_output[0] == True ):
+        fire_risk_level = 3
+    elif(fwi >=20 and fwi <30 and predicted_output[0] == True ):
+        fire_risk_level = 4
+    elif(fwi >=30 and predicted_output[0] == True ):
+        fire_risk_level = 5
+    else:
+        fire_risk_level = 0
+
+
      
     # Insert the data into the database
 
@@ -176,6 +193,7 @@ async def save_readings(node_data: Data):
         fwi=fwi,
         fire_risk=predicted_output[0],
         fire=True if node_data.smoke_value >= 1100 else False,
+        fire_risk_level=fire_risk_level,
         updated_FWI=updated_fwi
     )
 
@@ -189,6 +207,7 @@ async def save_readings(node_data: Data):
          "BUI":bui,
          "FWI":fwi,
          "Fire Risk":predicted_output[0],
+        "Fire Risk Level":fire_risk_level,
          "Fire": True if node_data.smoke_value >= 1100 else False
 
          }
