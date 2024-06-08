@@ -3,7 +3,7 @@ import datetime
 from pydantic import BaseModel, root_validator
 
 from bson import ObjectId as BsonObjectId
-from typing import Any
+from typing import Any, List
 
 from database import data_collection
 
@@ -51,8 +51,29 @@ async def insert_data(data: DataSchema):
     data_id = await data_collection.insert_one(data_dict)
     return {"id": str(data_id.inserted_id), "timestamp": data_dict['timestamp']}
 
-async def get_last_reading(node_id: str):
-    data = await data_collection.find_one({"node_id": node_id}, sort=[("timestamp", -1)])
-    return data
-
+async def get_last_reading(node_id: BsonObjectId):
+    try:
+        if not isinstance(node_id, BsonObjectId):
+            node_id = BsonObjectId(node_id)
+        # Find the last reading for the node
+        data = await data_collection.find_one({"node_id": node_id}, sort=[("timestamp", -1)])
+        if data:
+            data["_id"] = str(data["_id"])  # Convert ObjectId to string
+            data["node_id"] = str(data["node_id"])  # Convert ObjectId to string
+        return data
+    except Exception as e:
+        print(f"Error in get_last_reading: {e}")
+        return None
+    
+async def get_last_10_readings(node_id: str) -> List[Any]:
+    print("123123  1 ",node_id)
+    try:
+        # Convert node_id to ObjectId
+        if not isinstance(node_id, BsonObjectId):
+            node_id = BsonObjectId(node_id)
+    except Exception as e:
+        print(f"Failed to convert node_id to ObjectId: {e}")
+        return []
+    nodes = await data_collection.find({"node_id": node_id},{"node_id":0,"_id":0}).to_list(None)
+    return  nodes
     

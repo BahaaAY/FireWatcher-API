@@ -1,9 +1,10 @@
 import secrets
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from models.node import Node
 from database import nodes_collection
-from schemas.data import get_last_reading
+from schemas.data import get_last_reading, get_last_10_readings
 from passlib.hash import bcrypt
+from bson import ObjectId
 
 router = APIRouter()
 
@@ -38,6 +39,20 @@ async def get_nodes():
         node["last_reading"] = await get_last_reading(node["_id"])
         nodes_list.append(node)
     return {"nodes": nodes_list}
+
+@router.get("/nodes/{id}")
+async def get_node_by_id(id: str):
+    try:
+        node = await nodes_collection.find_one({"_id": ObjectId(id)}, {"secret_key": 0})
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    if node is None:
+        raise HTTPException(status_code=404, detail="Node not found")
+    node["_id"] = str(node["_id"])
+    print("nodeeeeeeeee ",node,node["_id"])
+    node["last_readings"] = await get_last_10_readings(node["_id"])
+    return node
 
 @router.get("/testn")
 async def testn():
