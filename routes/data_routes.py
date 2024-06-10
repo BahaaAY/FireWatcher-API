@@ -75,7 +75,7 @@ async def save_readings(node_data: Data):
             print("weather data testing : 1",weather_data)
             mth = int(current_date.month)
             fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],weather_data["current"]["precip_mm"])
-            # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],12)
+            # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],45)
             ffmc = fwisystem.FFMCcalc(ffmc0)
             dmc = fwisystem.DMCcalc(dmc0,mth)
             dc = fwisystem.DCcalc(dc0,mth)
@@ -108,7 +108,7 @@ async def save_readings(node_data: Data):
             print("weather data testing : 2",weather_data)
             mth = int(current_date.month)
             fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],weather_data["current"]["precip_mm"])
-            # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],12)
+            # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],45)
             ffmc = fwisystem.FFMCcalc(ffmc0)
             dmc = fwisystem.DMCcalc(dmc0,mth)
             dc = fwisystem.DCcalc(dc0,mth)
@@ -127,7 +127,7 @@ async def save_readings(node_data: Data):
             print("weather data testing : 3",weather_data)
             mth = int(current_date.month)
             fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],weather_data["current"]["precip_mm"])
-            # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],12)
+            # fwisystem = FWIClass(node_data.temperature,node_data.humidity,weather_data["current"]["wind_kph"],45)
             ffmc = fwisystem.FFMCcalc(ffmc0)
             dmc = fwisystem.DMCcalc(dmc0,mth)
             dc = fwisystem.DCcalc(dc0,mth)
@@ -143,11 +143,12 @@ async def save_readings(node_data: Data):
     'Temperature':[node_data.temperature],
     'RH': [node_data.humidity],
     'Ws': [weather_data["current"]["wind_kph"]],
-    'Rain': [weather_data["current"]["precip_mm"]],
+    'Rain': [np.log(weather_data["current"]["precip_mm"] + 0.1)],
+    # 'Rain': [45],
     'FFMC': [ffmc],
-    'DMC': [dmc],
+    'DMC': [np.sqrt(dmc)],
     'DC': [dc],
-    'ISI': [isi],
+    'ISI': [np.sqrt(isi)],
     'BUI': [bui],
     'FWI': [fwi]
 }
